@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/engine/*": ["src/engine/*"],
+      "@/game/*": ["src/game/*"],
+      "@/ui/*": ["src/ui/*"],
+      "@/content/*": ["src/content/*"],
+      "@/platform/*": ["src/platform/*"],
+      "@/tests/*": ["tests/*"],
+      "@/tools/*": ["tools/*"]
+    },
+    "types": ["vitest/globals", "node"]
+  },
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "tools/**/*",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage"
+  ],
+  "references": [
+    { "path": "./tsconfig.node.json" }
+  ]
+}
