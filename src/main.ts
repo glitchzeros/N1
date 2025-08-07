@@ -3,6 +3,11 @@ import { Vector3 } from '@/engine/core/math';
 import { TransformComponent, RenderComponent, InputComponent, PhysicsComponent, CameraComponent } from '@/engine/core/ecs/components';
 import { TransformSystem, RenderSystem, InputSystem, PhysicsSystem, CameraSystem } from '@/engine/core/ecs/systems';
 import { TerrainSystem } from '@/engine/game/systems/TerrainSystem';
+import { WeaponSystem, WeaponComponent } from '@/engine/game/systems/WeaponSystem';
+import { AISystem, AIComponent } from '@/engine/game/systems/AISystem';
+import { AudioSystem, AudioComponent } from '@/engine/game/systems/AudioSystem';
+import { HUDSystem, HUDComponent } from '@/engine/game/systems/HUDSystem';
+import { DestructionSystem, DestructibleComponent } from '@/engine/game/systems/DestructionSystem';
 import { InputManager } from '@/engine/platform/web/InputManager';
 import * as THREE from 'three';
 
@@ -28,6 +33,7 @@ class Game {
   private canvas: HTMLCanvasElement;
   private isInitialized: boolean = false;
   private inputManager: InputManager;
+  private playerEntityId: string | null = null;
 
   constructor() {
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -55,6 +61,12 @@ class Game {
     ));
     this.engine.addSystem(new RenderSystem((this.engine as any).renderer.scene));
     this.engine.addSystem(new TerrainSystem((this.engine as any).renderer.scene));
+    this.engine.addSystem(new WeaponSystem());
+    this.engine.addSystem(new AISystem());
+    this.engine.addSystem(new AudioSystem());
+    this.engine.addSystem(new HUDSystem());
+    this.engine.addSystem(new DestructionSystem((this.engine as any).renderer.scene));
+    
     // Set up input abstraction
     this.inputManager = new InputManager();
     
@@ -141,14 +153,67 @@ class Game {
   }
 
   private createInitialEntities(): void {
-    // Create ground plane (handled by TerrainSystem)
     // Create player
     const player = this.engine.createEntity('Player');
+    this.playerEntityId = player.id;
+    
     this.engine.addComponent(player.id, new TransformComponent());
     this.engine.addComponent(player.id, new RenderComponent());
     this.engine.addComponent(player.id, new InputComponent());
     this.engine.addComponent(player.id, new PhysicsComponent());
     this.engine.addComponent(player.id, new CameraComponent());
+    this.engine.addComponent(player.id, new WeaponComponent('rifle'));
+    this.engine.addComponent(player.id, new AudioComponent());
+    this.engine.addComponent(player.id, new HUDComponent());
+    
+    // Set camera to follow player
+    const camera = this.engine.getComponent<CameraComponent>(player.id, 'CameraComponent');
+    if (camera) {
+      camera.targetEntityId = player.id;
+    }
+    
+    // Create AI bots
+    for (let i = 0; i < 3; i++) {
+      const bot = this.engine.createEntity(`AI_Bot_${i}`);
+      
+      const t = new TransformComponent();
+      t.position = new Vector3(
+        (Math.random() - 0.5) * 40,
+        1,
+        (Math.random() - 0.5) * 40
+      );
+      this.engine.addComponent(bot.id, t);
+      
+      const r = new RenderComponent();
+      r.color = 0xff0000;
+      this.engine.addComponent(bot.id, r);
+      
+      this.engine.addComponent(bot.id, new InputComponent());
+      this.engine.addComponent(bot.id, new PhysicsComponent());
+      this.engine.addComponent(bot.id, new AIComponent());
+      this.engine.addComponent(bot.id, new WeaponComponent('pistol'));
+      this.engine.addComponent(bot.id, new AudioComponent());
+    }
+    
+    // Create destructible objects
+    const destructionSystem = this.engine.getSystem<DestructionSystem>('DestructionSystem');
+    if (destructionSystem) {
+      // Create some destructible walls
+      destructionSystem.createDestructibleWall(
+        new Vector3(-10, 0, -10),
+        new Vector3(10, 0, -10),
+        3,
+        150
+      );
+      
+      // Create a destructible building
+      destructionSystem.createDestructibleBuilding(
+        new Vector3(15, 0, 15),
+        new Vector3(8, 6, 8),
+        300
+      );
+    }
+    
     // Create some test cubes
     for (let i = 0; i < 5; i++) {
       const testObject = this.engine.createEntity(`TestObject_${i}`);
