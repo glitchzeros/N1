@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="description" content="Nexus Royale - Professional-grade battle royale game with AAA polish standards">
+  <meta name="keywords" content="battle royale, multiplayer, game, webgl, three.js">
+  <meta name="author" content="Nexus Royale Team">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Nexus Royale">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Nexus Royale">
+  <meta property="og:description" content="Professional-grade battle royale game">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nexus-royale.com">
+  <meta property="og:image" content="/icons/icon-512x512.png">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Nexus Royale">
+  <meta name="twitter:description" content="Professional-grade battle royale game">
+  <meta name="twitter:image" content="/icons/icon-512x512.png">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/src/main.ts" as="script">
+  <link rel="preload" href="/src/engine/Engine.ts" as="script">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <title>Nexus Royale</title>
+  
+  <style>
+    /* Critical CSS for immediate loading */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #ffffff;
+    }
+    
+    #app {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: none;
+    }
+    
+    #loadingScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    #loadingScreen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .logo {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease-in-out infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .loading-bar {
+      width: 300px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    
+    .loading-progress {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .loading-text {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-align: center;
+    }
+    
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+    
+    #ui > * {
+      pointer-events: auto;
+    }
+    
+    .hud {
+      position: absolute;
+      padding: 1rem;
+    }
+    
+    .hud.top-left {
+      top: 0;
+      left: 0;
+    }
+    
+    .hud.top-right {
+      top: 0;
+      right: 0;
+    }
+    
+    .hud.bottom-left {
+      bottom: 0;
+      left: 0;
+    }
+    
+    .hud.bottom-right {
+      bottom: 0;
+      right: 0;
+    }
+    
+    .hud.center {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .debug-panel {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: #00ff00;
+      max-width: 300px;
+      display: none;
+    }
+    
+    .debug-panel.visible {
+      display: block;
+    }
+    
+    .debug-panel h3 {
+      margin-bottom: 0.5rem;
+      color: #ffffff;
+    }
+    
+    .debug-panel .stat {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+    
+    .debug-panel .stat-label {
+      color: #cccccc;
+    }
+    
+    .debug-panel .stat-value {
+      color: #00ff00;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .logo {
+        font-size: 2rem;
+      }
+      
+      .loading-bar {
+        width: 250px;
+      }
+      
+      .debug-panel {
+        font-size: 0.6rem;
+        max-width: 250px;
+      }
+    }
+    
+    /* High DPI displays */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      .loading-bar {
+        height: 2px;
+      }
+    }
+    
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .logo {
+        animation: none;
+      }
+      
+      .loading-progress {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+      <div class="logo">NEXUS ROYALE</div>
+      <div class="loading-bar">
+        <div class="loading-progress" id="loadingProgress"></div>
+      </div>
+      <div class="loading-text" id="loadingText">Initializing...</div>
+    </div>
+    
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas" tabindex="0"></canvas>
+    
+    <!-- UI Layer -->
+    <div id="ui">
+      <!-- Debug Panel -->
+      <div class="debug-panel" id="debugPanel">
+        <h3>Debug Info</h3>
+        <div class="stat">
+          <span class="stat-label">FPS:</span>
+          <span class="stat-value" id="debugFPS">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Frame Time:</span>
+          <span class="stat-value" id="debugFrameTime">0ms</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Entities:</span>
+          <span class="stat-value" id="debugEntities">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Draw Calls:</span>
+          <span class="stat-value" id="debugDrawCalls">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Triangles:</span>
+          <span class="stat-value" id="debugTriangles">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Memory:</span>
+          <span class="stat-value" id="debugMemory">0MB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+    
+    // Prevent context menu on canvas
+    document.getElementById('gameCanvas').addEventListener('contextmenu', e => {
+      e.preventDefault();
+    });
+    
+    // Prevent text selection
+    document.addEventListener('selectstart', e => {
+      e.preventDefault();
+    });
+    
+    // Prevent zoom on double tap (mobile)
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (event) => {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+  </script>
+  
+  <!-- Main Game Script -->
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
