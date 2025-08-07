@@ -1,5 +1,10 @@
 import { Engine, EngineConfig } from '@/engine/Engine';
 import { Vector3 } from '@/engine/core/math';
+import { TransformComponent, RenderComponent, InputComponent, PhysicsComponent, CameraComponent } from '@/engine/core/ecs/components';
+import { TransformSystem, RenderSystem, InputSystem, PhysicsSystem, CameraSystem } from '@/engine/core/ecs/systems';
+import { TerrainSystem } from '@/engine/game/systems/TerrainSystem';
+import { InputManager } from '@/engine/platform/web/InputManager';
+import * as THREE from 'three';
 
 // Global game instance
 let game: Game | null = null;
@@ -22,6 +27,7 @@ class Game {
   private engine: Engine;
   private canvas: HTMLCanvasElement;
   private isInitialized: boolean = false;
+  private inputManager: InputManager;
 
   constructor() {
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -38,6 +44,19 @@ class Game {
     };
 
     this.engine = new Engine(config);
+    
+    // Set up ECS systems
+    this.engine.addSystem(new TransformSystem());
+    this.engine.addSystem(new InputSystem());
+    this.engine.addSystem(new PhysicsSystem());
+    this.engine.addSystem(new CameraSystem(
+      (pos) => this.engine.setCameraPosition(pos),
+      (target) => this.engine.setCameraTarget(target)
+    ));
+    this.engine.addSystem(new RenderSystem((this.engine as any).renderer.scene));
+    this.engine.addSystem(new TerrainSystem((this.engine as any).renderer.scene));
+    // Set up input abstraction
+    this.inputManager = new InputManager();
     
     // Set up event listeners
     this.setupEventListeners();
@@ -122,18 +141,24 @@ class Game {
   }
 
   private createInitialEntities(): void {
-    // Create ground plane
-    const ground = this.engine.createEntity('Ground');
-    // Add ground components here
-    
+    // Create ground plane (handled by TerrainSystem)
     // Create player
     const player = this.engine.createEntity('Player');
-    // Add player components here
-    
-    // Create some test objects
+    this.engine.addComponent(player.id, new TransformComponent());
+    this.engine.addComponent(player.id, new RenderComponent());
+    this.engine.addComponent(player.id, new InputComponent());
+    this.engine.addComponent(player.id, new PhysicsComponent());
+    this.engine.addComponent(player.id, new CameraComponent());
+    // Create some test cubes
     for (let i = 0; i < 5; i++) {
       const testObject = this.engine.createEntity(`TestObject_${i}`);
-      // Add test object components here
+      const t = new TransformComponent();
+      t.position = new Vector3(i * 2 - 4, 2, 0);
+      this.engine.addComponent(testObject.id, t);
+      const r = new RenderComponent();
+      r.color = 0xff0000 + i * 0x002200;
+      this.engine.addComponent(testObject.id, r);
+      this.engine.addComponent(testObject.id, new PhysicsComponent());
     }
   }
 
