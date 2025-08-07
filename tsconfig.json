@@ -31,21 +31,21 @@
       "@/tests/*": ["tests/*"],
       "@/tools/*": ["tools/*"]
     },
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals"]
   },
   "include": [
     "src/**/*",
     "tests/**/*",
-    "tools/**/*",
-    "vite.config.ts",
-    "vitest.config.ts",
-    "playwright.config.ts"
+    "tools/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "build",
-    "coverage"
+    "coverage",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts"
   ],
   "references": [
     { "path": "./tsconfig.node.json" }
