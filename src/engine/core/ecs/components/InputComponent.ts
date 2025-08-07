@@ -1,8 +1,8 @@
 import { Component } from '../Component';
 
 export type InputState = {
-  up: boolean;
-  down: boolean;
+  forward: boolean;
+  backward: boolean;
   left: boolean;
   right: boolean;
   jump: boolean;
@@ -10,6 +10,7 @@ export type InputState = {
   aim: boolean;
   sprint: boolean;
   crouch: boolean;
+  reload: boolean;
   mouseX: number;
   mouseY: number;
   lookX: number;
@@ -18,8 +19,8 @@ export type InputState = {
 
 export class InputComponent extends Component {
   state: InputState = {
-    up: false,
-    down: false,
+    forward: false,
+    backward: false,
     left: false,
     right: false,
     jump: false,
@@ -27,6 +28,7 @@ export class InputComponent extends Component {
     aim: false,
     sprint: false,
     crouch: false,
+    reload: false,
     mouseX: 0,
     mouseY: 0,
     lookX: 0,

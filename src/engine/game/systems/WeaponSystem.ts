@@ -5,6 +5,7 @@ import { World } from '@/engine/core/ecs/World';
 import { Vector3 } from '@/engine/core/math';
 import { RenderComponent } from '@/engine/core/ecs/components/RenderComponent';
 import { PhysicsComponent } from '@/engine/core/ecs/components/PhysicsComponent';
+import { CollisionComponent } from './CollisionSystem';
 
 export type WeaponType = 'pistol' | 'rifle' | 'shotgun' | 'sniper' | 'smg' | 'lmg';
 
@@ -118,16 +119,15 @@ export class WeaponSystem extends System {
 
       // Handle firing
       if (input.state.fire && weapon.canFire(currentTime)) {
-        this.fireWeapon(entityId, transform, weapon, currentTime);
+        this.fireWeapon(entityId, transform, weapon, currentTime, world);
       }
     }
   }
 
-  private fireWeapon(entityId: string, transform: TransformComponent, weapon: WeaponComponent, currentTime: number): void {
+  private fireWeapon(entityId: string, transform: TransformComponent, weapon: WeaponComponent, currentTime: number, world: World): void {
     if (!weapon.fire(currentTime)) return;
 
     // Create projectile entity
-    const world = (this as any).world as World;
     const projectile = world.createEntity('Projectile');
     
     // Add projectile components
@@ -142,12 +142,24 @@ export class WeaponSystem extends System {
     world.addComponent(projectile.id, projRender);
 
     const projPhysics = new PhysicsComponent();
-    // Calculate direction (forward from player)
-    const direction = new Vector3(0, 0, -1); // Simplified - should use player rotation
-    projPhysics.velocity = direction.scale(weapon.stats.projectileSpeed);
+    // Calculate direction based on player rotation
+    const direction = new Vector3(0, 0, -1); // Forward direction
+    const rotatedDirection = transform.rotation.rotateVector(direction);
+    projPhysics.velocity = rotatedDirection.scale(weapon.stats.projectileSpeed);
     world.addComponent(projectile.id, projPhysics);
 
-    // Add projectile-specific component for damage tracking
-    // This would be expanded in a full implementation
+    // Add collision component for projectile
+    const projCollision = new CollisionComponent(0.1, true, weapon.stats.damage);
+    world.addComponent(projectile.id, projCollision);
+
+    // Play weapon sound
+    const audio = world.getComponent<any>(entityId, 'AudioComponent');
+    if (audio) {
+      audio.play(`${weapon.type}_fire`, {
+        x: transform.position.x,
+        y: transform.position.y,
+        z: transform.position.z
+      });
+    }
   }
 }

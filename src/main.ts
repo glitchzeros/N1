@@ -8,6 +8,9 @@ import { AISystem, AIComponent } from '@/engine/game/systems/AISystem';
 import { AudioSystem, AudioComponent } from '@/engine/game/systems/AudioSystem';
 import { HUDSystem, HUDComponent } from '@/engine/game/systems/HUDSystem';
 import { DestructionSystem, DestructibleComponent } from '@/engine/game/systems/DestructionSystem';
+import { PlayerMovementSystem } from '@/engine/game/systems/PlayerMovementSystem';
+import { CollisionSystem, CollisionComponent } from '@/engine/game/systems/CollisionSystem';
+import { HealthSystem, HealthComponent } from '@/engine/game/systems/HealthSystem';
 import { InputManager } from '@/engine/platform/web/InputManager';
 import * as THREE from 'three';
 
@@ -55,6 +58,9 @@ class Game {
     this.engine.addSystem(new TransformSystem());
     this.engine.addSystem(new InputSystem());
     this.engine.addSystem(new PhysicsSystem());
+    this.engine.addSystem(new PlayerMovementSystem());
+    this.engine.addSystem(new CollisionSystem());
+    this.engine.addSystem(new HealthSystem());
     this.engine.addSystem(new CameraSystem(
       (pos) => this.engine.setCameraPosition(pos),
       (target) => this.engine.setCameraTarget(target)
@@ -137,10 +143,7 @@ class Game {
   }
 
   private async initializeCoreSystems(): Promise<void> {
-    // Add core systems here
-    // Example: this.engine.addSystem(new InputSystem());
-    // Example: this.engine.addSystem(new PhysicsSystem());
-    // Example: this.engine.addSystem(new RenderSystem());
+    // Systems are already added in constructor
   }
 
   private async setupGameWorld(): Promise<void> {
@@ -165,6 +168,8 @@ class Game {
     this.engine.addComponent(player.id, new WeaponComponent('rifle'));
     this.engine.addComponent(player.id, new AudioComponent());
     this.engine.addComponent(player.id, new HUDComponent());
+    this.engine.addComponent(player.id, new HealthComponent(100));
+    this.engine.addComponent(player.id, new CollisionComponent(0.5, false));
     
     // Set camera to follow player
     const camera = this.engine.getComponent<CameraComponent>(player.id, 'CameraComponent');
@@ -193,25 +198,37 @@ class Game {
       this.engine.addComponent(bot.id, new AIComponent());
       this.engine.addComponent(bot.id, new WeaponComponent('pistol'));
       this.engine.addComponent(bot.id, new AudioComponent());
+      this.engine.addComponent(bot.id, new HealthComponent(100));
+      this.engine.addComponent(bot.id, new CollisionComponent(0.5, false));
     }
     
     // Create destructible objects
     const destructionSystem = this.engine.getSystem<DestructionSystem>('DestructionSystem');
     if (destructionSystem) {
       // Create some destructible walls
-      destructionSystem.createDestructibleWall(
+      const wallIds = destructionSystem.createDestructibleWall(
         new Vector3(-10, 0, -10),
         new Vector3(10, 0, -10),
         3,
         150
       );
       
+      // Add collision components to wall segments
+      for (const wallId of wallIds) {
+        this.engine.addComponent(wallId, new CollisionComponent(1.0, false));
+      }
+      
       // Create a destructible building
-      destructionSystem.createDestructibleBuilding(
+      const buildingIds = destructionSystem.createDestructibleBuilding(
         new Vector3(15, 0, 15),
         new Vector3(8, 6, 8),
         300
       );
+      
+      // Add collision components to building segments
+      for (const buildingId of buildingIds) {
+        this.engine.addComponent(buildingId, new CollisionComponent(2.0, false));
+      }
     }
     
     // Create some test cubes
@@ -224,6 +241,7 @@ class Game {
       r.color = 0xff0000 + i * 0x002200;
       this.engine.addComponent(testObject.id, r);
       this.engine.addComponent(testObject.id, new PhysicsComponent());
+      this.engine.addComponent(testObject.id, new CollisionComponent(0.5, false));
     }
   }
 

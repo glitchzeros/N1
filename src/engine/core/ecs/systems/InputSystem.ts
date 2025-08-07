@@ -4,8 +4,8 @@ import { World } from '../World';
 
 // Global input state (to be filled by platform input abstraction)
 export const GlobalInput: Record<string, any> = {
-  up: false,
-  down: false,
+  forward: false,
+  backward: false,
   left: false,
   right: false,
   jump: false,
@@ -13,6 +13,7 @@ export const GlobalInput: Record<string, any> = {
   aim: false,
   sprint: false,
   crouch: false,
+  reload: false,
   mouseX: 0,
   mouseY: 0,
   lookX: 0,
